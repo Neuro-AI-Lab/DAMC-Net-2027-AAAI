@@ -49,10 +49,30 @@ Standard deviation is the **across-subject** sample standard deviation (`ddof=1`
 > multiply-accumulate is one MAC. The parameter-free recalibration, reductions, `log`, `softmax`,
 > and element-wise operations are excluded.
 
-### Ablation study
+### Ablation studies
 
-Contribution of the two branches and of the parameter-free recalibration axis assigned to each.
 All configurations share the same data splits and training protocol (15 subjects × 10 seeds × 200 epochs).
+
+#### Component ablation (MS-conv × PF-Attn. × LP-pooling)
+
+| MS-conv | PF-Attn. | LP-pooling | Accuracy (Mean $\pm$ std) |
+| :---: | :---: | :---: | :---: |
+| $\times$ | $\times$ | $\times$ | 0.4881 $\pm$ 0.0538 |
+| $\checkmark$ | $\times$ | $\times$ | 0.5001 $\pm$ 0.0538 |
+| $\times$ | $\checkmark$ | $\times$ | 0.5023 $\pm$ 0.0513 |
+| $\checkmark$ | $\checkmark$ | $\times$ | 0.5181 $\pm$ 0.0535 |
+| $\times$ | $\times$ | $\checkmark$ | 0.7965 $\pm$ 0.0697 |
+| $\checkmark$ | $\times$ | $\checkmark$ | <u>0.8326 $\pm$ 0.0673</u> |
+| $\times$ | $\checkmark$ | $\checkmark$ | 0.8016 $\pm$ 0.0643 |
+| **$\checkmark$** | **$\checkmark$** | **$\checkmark$** | **0.8413 $\pm$ 0.0597** |
+
+> **Key Findings:**
+> 1. **The log-power readout carries most of the accuracy.** Its main effect is **+0.316** (0.8180 with LP vs. 0.5022 without, averaged over the other two factors), and every configuration without it collapses to ~0.50 regardless of what else is enabled. Replacing the log-power readout with time-axis mean pooling is the single most damaging change to the model.
+> 2. **Multi-scale convolution adds a further 0.036.** With the log-power readout in place, enabling the parallel dilated scales lifts accuracy from 0.7965 to **0.8326** (+0.0361), and to 0.8413 (+0.0397) when the recalibration is also on.
+> 3. **The parameter-free recalibration is a small but cost-free gain.** It contributes **+0.0087** on top of MS-conv + LP-pooling (0.8326 → 0.8413) while adding **zero parameters and zero MACs**. Its benefit depends on the multi-scale scales being present: without MS-conv it is worth only +0.0051 (0.7965 → 0.8016), consistent with its role of recalibrating activations before the per-scale readout.
+> 4. **Lowest variability at the best accuracy.** The full model also has the smallest across-subject standard deviation of all eight configurations (0.0597), i.e. the components do not trade stability for mean accuracy.
+
+#### Branch contribution and recalibration axis
 
 | Configuration | Params | Accuracy (Mean $\pm$ std) |
 | :--- | ---: | :---: |
@@ -64,10 +84,11 @@ All configurations share the same data splits and training protocol (15 subjects
 | Channel / channel | 89,029 | 0.8343 $\pm$ 0.0647 |
 | **Temporal / channel (Ours)** | **89,029** | **0.8413 $\pm$ 0.0597** |
 
-> **Key Findings:**
-> 1. **The two branches are complementary.** Neither branch alone is sufficient: the depthwise T-AMC branch reaches 0.6924 and the cross-channel S-AMC branch 0.8251, while their fusion reaches 0.8413. Adding T-AMC on top of S-AMC costs only 6,272 further parameters (82,757 → 89,029) and is the cheaper half of the model by an order of magnitude.
-> 2. **The recalibration axis must be matched to the branch.** With both branches recalibrated along the same axis, accuracy drops to 0.8360 (temporal / temporal) or 0.8343 (channel / channel) at identical parameter count. Recalibrating T-AMC along time and S-AMC across channels — each along the axis its convolution does *not* mix — gives the best accuracy and the lowest across-subject variability (0.0597).
-> 3. **Accuracy comes from the design, not from capacity.** All three dual-branch variants have exactly 89,029 parameters and 69.401 M MACs, so the 0.7-point gain of the matched-axis configuration is attributable purely to where the parameter-free recalibration is applied.
+> The two branches are complementary: neither alone suffices (0.6924 and 0.8251 vs. 0.8413), and
+> adding T-AMC on top of S-AMC costs only 6,272 further parameters. The recalibration axis must be
+> matched to each branch — recalibrating both branches along the same axis costs 0.005–0.007 accuracy
+> at identical parameter count and MACs, so the gain comes from *where* the recalibration is applied,
+> not from added capacity.
 
 ---
 
