@@ -82,14 +82,9 @@ concat (B, 128) → Linear → logits (B, 5)
 채널별로 시간축 평균·분산을 구해 각 시점의 중요도를 닫힌 형태로 계산하고
 sigmoid 게이팅을 적용합니다. 학습 파라미터가 0개라 모델 크기를 늘리지 않습니다.
 
-### Log-power 도메인 가중합 (핵심 설계)
+### Log-power 도메인 가중합
 
 SimAM을 통과한 각 scale을 시간축 log-power `log(mean(x²))`로 요약해 `(B, 64)`를
 얻고, 네 scale을 concat하지 않고 가중합으로 합칩니다. 가중치는
 (scale, channel)별 파라미터에 scale 축 softmax를 적용해 얻습니다 (초기값 0 →
 균등 평균에서 학습을 시작).
-
-가중합을 log-power 도메인에서 하는 것이 중요합니다. log-power는 conv의 스케일
-변화를 덧셈 이동으로 바꾸기 때문에, 이 가중치가 conv 가중치로 흡수되지 않고
-실제로 학습됩니다. feature 도메인에서 같은 가중합을 하면 conv가 그대로 흡수해
-버려 효과가 없습니다.
