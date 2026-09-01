@@ -1,4 +1,6 @@
-# [2027 AAAI]DAMC-Net: Dual-Branch Attention-Guided Multi-Scale Convolutional Network for EEG-Based Imagined Speech Decoding
+# [Under Review AAAI]DAMC-Net: Dual-Branch Attention-Guided Multi-Scale Convolutional Network for EEG-Based Imagined Speech Decoding
+
+S. W. Lee, D. H. Kim, and Y.-S. Choi
 
 15명 피험자의 상상 발화(imagined speech) EEG로부터 5개 단어(`Hello`, `Helpme`, `Stop`, `Thankyou`, `Yes`)를 분류하는 subject-dependent 모델입니다.
 
